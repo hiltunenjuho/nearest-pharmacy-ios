@@ -26,11 +26,11 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 18) {
                 HStack {
                     VStack(alignment: .leading) {
-                        Text("Treat Health")
+                        Text("Juho Hiltunen")
                             .font(.caption)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.green)
                             .textCase(.uppercase)
-                        Text("Closest pharmacy")
+                        Text("Pharmacy Finder")
                             .font(.largeTitle.bold())
                     }
                     Spacer()
@@ -41,8 +41,8 @@ struct ContentView: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .frame(maxWidth: .infinity)
-                            .background(.blue)
-                            .foregroundStyle(.white)
+                            .background(Color.green)
+                            .foregroundStyle(.black)
                             .clipShape(Capsule())
                     }
                 }
@@ -51,7 +51,7 @@ struct ContentView: View {
                     Text(error)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.blue.opacity(0.12))
+                        .background(Color.green.opacity(0.12))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
@@ -70,11 +70,11 @@ struct ContentView: View {
                                         to: (lat: pharmacy.latitude, lon: pharmacy.longitude)
                                     )
                                     Text(distance < 1 ? "\(Int(distance * 1000)) m" : String(format: "%.1f km", distance))
-                                        .foregroundStyle(.blue)
+                                        .foregroundStyle(.green)
                                         .fontWeight(.semibold)
                                 }
                             }
-                            Text(pharmacy.address)
+                            Text("\(pharmacy.address), \(pharmacy.city)")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                             Text(pharmacy.hours)
@@ -91,7 +91,7 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(currentPharmacy.name)
                         .font(.title2.bold())
-                    Text(currentPharmacy.address)
+                    Text("\(currentPharmacy.address), \(currentPharmacy.city)")
                         .foregroundStyle(.secondary)
 
                     HStack {
@@ -108,11 +108,11 @@ struct ContentView: View {
                     .font(.subheadline)
 
                     HStack {
-                        ForEach(currentPharmacy.services, id: \.self) { service in
-                            Text(service)
+                        ForEach(currentPharmacy.facts, id: \ .self) { fact in
+                            Text(fact)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .background(Color.blue.opacity(0.12))
+                                .background(Color.green.opacity(0.12))
                                 .clipShape(Capsule())
                                 .font(.caption)
                         }
@@ -123,7 +123,7 @@ struct ContentView: View {
                         Link("Get directions", destination: URL(string: "https://www.google.com/maps/search/?api=1&query=\(currentPharmacy.address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? currentPharmacy.address)")!)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(.blue.opacity(0.15))
+                            .background(Color.green.opacity(0.15))
                             .foregroundStyle(.primary)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
@@ -135,6 +135,7 @@ struct ContentView: View {
             }
             .padding()
             .navigationTitle("Pharmacies")
+            .background(Color.black.opacity(0.8))
         }
     }
 }
@@ -170,7 +171,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        errorMessage = "Location access was denied. Showing the best available matches in Helsinki."
+        errorMessage = "Location access was denied. Showing the nearest options across the Helsinki Metropolitan Area."
         isLoading = false
     }
 
