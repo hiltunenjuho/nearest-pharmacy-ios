@@ -1,40 +1,38 @@
 # Pharmacy Finder iOS
 
-This repository contains the iOS companion app for Juho Hiltunen's nearest-pharmacy concept.
+The SwiftUI companion app for Juho Hiltunen's global nearest-pharmacy finder.
 
-## What it does
+## Features
 
-- Uses Core Location to find the user’s current position
-- Fetches nearby pharmacies from Google Places Nearby Search and shows up to 10, sorted by distance
-- Displays Google Places current opening hours (today’s hours where available), phone number, and Google Maps links
-- Does not include a hardcoded pharmacy directory or fabricated business details
-- Keeps the product uncluttered and easy to extend for future features
+- Uses Core Location to search around the user's current position anywhere in the world
+- Fetches and distance-sorts up to 10 pharmacies from OpenStreetMap via public Overpass API instances
+- Searches within a maximum radius of 50 km and returns up to the 10 closest results
+- Displays mapped addresses, contact details, today's hours when available, and map links
+- Offers System, Light, and Dark appearance options; System follows the iOS appearance
+- Includes an English/Finnish language toggle, initially using the device language
+- Includes an About screen with project, author, license, and data-source links
+- The About screen explains how search, map data, and location privacy work
 
-## Brand direction
+No Google Maps API key, account, or billing configuration is needed. Public Overpass instances are community resources and do not guarantee uptime. OpenStreetMap coverage and mapped details vary by region, so fewer than 10 results may be returned. Opening-hours details can be missing, out of date, or omit local holiday exceptions; confirm before travelling.
 
-- Dark mode-first presentation
-- Pharmacy-green accent styling, aligned with the web app
-- Personal branding instead of employer or organization branding
+The app sends the coordinates needed to perform the search to an Overpass service and does not persist location or search results. Pharmacy data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the [ODbL](https://opendatacommons.org/licenses/odbl/).
 
-## Run locally
+## Build
 
-Open the Swift package in Xcode 15+ on macOS. The host iOS app must include both `NSLocationWhenInUseUsageDescription` and `GOOGLE_MAPS_API_KEY` entries in its `Info.plist` (or generate the API key entry from a local, untracked build setting). Enable Places API (New) and billing for the Google Cloud project, then restrict the iOS key to Places API (New) and the host app's bundle identifier.
+Open the Swift package in Xcode 15+ on macOS, or run:
 
 ```bash
 swift build
 ```
 
-The key is deliberately not included in this repository. Google Maps Platform usage can incur charges; review current pricing and quotas before enabling public use. Pharmacy results are fetched when the user requests their location and are not persisted.
-
-## Notes
-
-Google Places is the source of live pharmacy information. Search requests only ask for fields used by the app.
+The host iOS app needs `NSLocationWhenInUseUsageDescription` in its `Info.plist`. No API key is required.
 
 ## Author and license
+
+Application code is available under the [MIT License](./LICENSE); OpenStreetMap data remains under the ODbL.
 
 - [Portfolio](https://hiltunenjuho.github.io/)
 - [GitHub](https://github.com/hiltunenjuho)
 - [LinkedIn](https://www.linkedin.com/in/hiltunenjuho/)
-- [MIT License](./LICENSE)
-
-The license applies to this project's code; Google Maps content is subject to Google Maps Platform terms.
+- [Web repository](https://github.com/hiltunenjuho/nearest-pharmacy-web)
+- [iOS repository](https://github.com/hiltunenjuho/nearest-pharmacy-ios)

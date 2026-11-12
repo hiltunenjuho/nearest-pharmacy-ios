@@ -5,6 +5,46 @@ struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
     @State private var selectedPharmacyID: String?
     @State private var isAboutPresented = false
+    @AppStorage("pharmacyFinder.appearance") private var appearance = AppearanceMode.system.rawValue
+    @AppStorage("pharmacyFinder.language") private var languagePreference = "system"
+
+    private var selectedAppearance: AppearanceMode {
+        AppearanceMode(rawValue: appearance) ?? .system
+    }
+
+    private var selectedLanguage: String {
+        if languagePreference == "fi" || languagePreference == "en" {
+            return languagePreference
+        }
+        return Locale.preferredLanguages.first?.lowercased().hasPrefix("fi") == true ? "fi" : "en"
+    }
+
+    private var localizedBundle: Bundle {
+        guard let path = Bundle.module.path(forResource: selectedLanguage, ofType: "lproj"),
+              let bundle = Bundle(path: path) else {
+            return .module
+        }
+        return bundle
+    }
+
+    private func text(_ key: String) -> String {
+        localizedBundle.localizedString(forKey: key, value: nil, table: "Localizable")
+    }
+
+    private func todayHours(_ schedule: String?) -> String {
+        guard let schedule, let hours = openingHoursForToday(schedule) else {
+            return text(schedule == nil ? "hoursUnavailable" : "checkHours")
+        }
+        switch hours {
+        case "Open 24 hours": return text("open24Hours")
+        case "Closed today": return text("closedToday")
+        default: return hours
+        }
+    }
+
+    private func pharmacyName(_ name: String) -> String {
+        name == "Pharmacy" ? text("unnamedPharmacy") : name
+    }
 
     private var selectedPharmacy: Pharmacy? {
         locationManager.pharmacies.first { $0.id == selectedPharmacyID } ?? locationManager.pharmacies.first
@@ -24,7 +64,7 @@ struct ContentView: View {
                     }
                     Spacer()
                     Button(action: locationManager.requestLocation) {
-                        Text(locationManager.isLoading ? "Searching…" : "Find nearby")
+                        Text(locationManager.isLoading ? text("searching") : text("findNearby"))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .background(Color.green)
@@ -34,19 +74,25 @@ struct ContentView: View {
                     .disabled(locationManager.isLoading)
                 }
 
-                if let error = locationManager.errorMessage {
-                    Text(error)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.green.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                if let errorKey = locationManager.errorMessageKey {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(text(errorKey))
+                        if let details = locationManager.errorDetails {
+                            Text(details)
+                                .font(.caption)
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.green.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
                 if let pharmacy = selectedPharmacy {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(pharmacy.name)
+                        Text(pharmacyName(pharmacy.name))
                             .font(.title2.bold())
-                        Text(pharmacy.address.isEmpty ? "Address not provided" : pharmacy.address)
+                        Text(pharmacy.address.isEmpty ? text("addressMissing") : pharmacy.address)
                             .foregroundStyle(.secondary)
 
                         if let userLocation = locationManager.location {
@@ -54,49 +100,41 @@ struct ContentView: View {
                                 from: (userLocation.latitude, userLocation.longitude),
                                 to: (lat: pharmacy.latitude, lon: pharmacy.longitude)
                             )
-                            Label(distance < 1 ? "\(Int(distance * 1000)) m away" : String(format: "%.1f km away", distance), systemImage: "location")
+                            Label(distance < 1
+                                ? "\(Int(distance * 1000)) \(text("metersAway"))"
+                                : "\(String(format: "%.1f", locale: Locale(identifier: selectedLanguage), distance)) \(text("kilometersAway"))",
+                                  systemImage: "location")
                                 .font(.subheadline)
                         }
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("OPEN TODAY")
+                            Text(text("openToday"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            Text(pharmacy.hoursToday ?? "Hours unavailable")
+                            Text(todayHours(pharmacy.openingHours))
                                 .font(.headline)
-                        }
-
-                        if !pharmacy.currentWeekHours.isEmpty {
-                            DisclosureGroup("This week’s hours") {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    ForEach(Array(pharmacy.currentWeekHours.enumerated()), id: \.offset) { item in
-                                        Text(item.element)
-                                            .font(.caption)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                    }
-                                }
-                                .padding(.top, 6)
+                            if pharmacy.openingHours != nil {
+                                Text(text("hoursDisclaimer"))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
 
-                        HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 8) {
                             if let callURL = pharmacy.callURL {
-                                Link("Call \(pharmacy.phoneNumber ?? "pharmacy")", destination: callURL)
+                                Link(String(format: text("callPhone"), pharmacy.phoneNumber ?? ""), destination: callURL)
                             }
                             if let directionsURL = pharmacy.directionsURL {
-                                Link("Get directions", destination: directionsURL)
+                                Link(text("directions"), destination: directionsURL)
                             }
-                            if let mapsURL = pharmacy.mapsURL {
-                                Link("View in Google Maps", destination: mapsURL)
-                            }
+                            Link(text("viewOnOSM"), destination: pharmacy.osmURL)
                         }
                         .tint(.green)
 
-                        Text("Pharmacy information from Google Maps")
+                        Text(text("dataAttribution"))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                            .accessibilityLabel("Google Maps")
-                            .environment(\.locale, Locale(identifier: "en"))
+                            .accessibilityLabel(text("dataAttribution"))
                     }
                     .padding(18)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -105,11 +143,16 @@ struct ContentView: View {
                 }
 
                 if locationManager.pharmacies.isEmpty {
-                    ContentUnavailableView(
-                        "No pharmacy results",
-                        systemImage: "cross.case",
-                        description: Text("Find your location to load nearby pharmacies from Google Maps.")
-                    )
+                    VStack(spacing: 10) {
+                        Image(systemName: "cross.case")
+                            .font(.largeTitle)
+                        Text(text("noPharmacyResults"))
+                            .font(.headline)
+                        Text(text("findLocation"))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List(locationManager.pharmacies) { pharmacy in
                         Button {
@@ -117,7 +160,7 @@ struct ContentView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
-                                    Text(pharmacy.name)
+                                    Text(pharmacyName(pharmacy.name))
                                         .font(.headline)
                                     Spacer()
                                     if let userLocation = locationManager.location {
@@ -125,15 +168,17 @@ struct ContentView: View {
                                             from: (userLocation.latitude, userLocation.longitude),
                                             to: (lat: pharmacy.latitude, lon: pharmacy.longitude)
                                         )
-                                        Text(distance < 1 ? "\(Int(distance * 1000)) m" : String(format: "%.1f km", distance))
+                                        Text(distance < 1
+                                            ? "\(Int(distance * 1000)) \(text("metersAway"))"
+                                            : "\(String(format: "%.1f", locale: Locale(identifier: selectedLanguage), distance)) \(text("kilometersAway"))")
                                             .foregroundStyle(.green)
                                             .fontWeight(.semibold)
                                     }
                                 }
-                                Text(pharmacy.address.isEmpty ? "Address not provided" : pharmacy.address)
+                                Text(pharmacy.address.isEmpty ? text("addressMissing") : pharmacy.address)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                                Text(pharmacy.hoursToday ?? "Hours unavailable")
+                                Text(todayHours(pharmacy.openingHours))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -146,17 +191,38 @@ struct ContentView: View {
                 }
             }
             .padding()
-            .navigationTitle("Pharmacies")
-            .background(Color.black.opacity(0.8))
+            .navigationTitle(Text(text("pharmacies")))
         }
+        .preferredColorScheme(selectedAppearance.colorScheme)
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Picker(selection: $appearance, label: Text(text("appearance"))) {
+                        ForEach(AppearanceMode.allCases) { mode in
+                            Text(text(mode.titleKey)).tag(mode.rawValue)
+                        }
+                    }
+                } label: {
+                    Image(systemName: selectedAppearance.symbol)
+                }
+                .accessibilityLabel(text("appearance"))
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    languagePreference = selectedLanguage == "fi" ? "en" : "fi"
+                } label: {
+                    Text(selectedLanguage == "fi" ? "EN" : "FI")
+                        .font(.caption.bold())
+                }
+                .accessibilityLabel(text("switchLanguage"))
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     isAboutPresented = true
                 } label: {
                     Image(systemName: "info.circle")
                 }
-                .accessibilityLabel("About this app")
+                .accessibilityLabel(text("openInfo"))
             }
         }
         .sheet(isPresented: $isAboutPresented) {
@@ -167,30 +233,58 @@ struct ContentView: View {
     private var aboutSheet: some View {
         NavigationStack {
             List {
-                Section("About") {
-                    Text("Pharmacy Finder is a personal project by Juho Hiltunen.")
-                    Text("© \(Calendar.current.component(.year, from: Date())) Juho Hiltunen")
-                    Link("MIT License", destination: URL(string: "https://github.com/hiltunenjuho/nearest-pharmacy-ios/blob/main/LICENSE")!)
+                Section {
+                    Text(text("infoIntro"))
+                    Text(String(format: text("copyright"), Calendar.current.component(.year, from: Date())))
+                    Link(text("mitLicense"), destination: URL(string: "https://github.com/hiltunenjuho/nearest-pharmacy-ios/blob/main/LICENSE")!)
+                    Link(text("dataAttribution"), destination: URL(string: "https://www.openstreetmap.org/copyright")!)
+                } header: {
+                    Text(text("aboutTitle"))
                 }
 
-                Section("Juho Hiltunen") {
-                    Link("Portfolio", destination: URL(string: "https://hiltunenjuho.github.io/")!)
+                Section {
+                    Text(text("howItWorks"))
+                } header: {
+                    Text(text("howItWorksTitle"))
+                }
+
+                Section {
+                    Text(text("dataInformation"))
+                } header: {
+                    Text(text("dataTitle"))
+                }
+
+                Section {
+                    Text(text("privacyInformation"))
+                } header: {
+                    Text(text("privacyTitle"))
+                }
+
+                Section {
+                    Link(text("portfolio"), destination: URL(string: "https://hiltunenjuho.github.io/")!)
                     Link("GitHub", destination: URL(string: "https://github.com/hiltunenjuho")!)
                     Link("LinkedIn", destination: URL(string: "https://www.linkedin.com/in/hiltunenjuho/")!)
+                } header: {
+                    Text(text("authorTitle"))
                 }
 
-                Section("Projects") {
-                    Link("Web repository", destination: URL(string: "https://github.com/hiltunenjuho/nearest-pharmacy-web")!)
-                    Link("iOS repository", destination: URL(string: "https://github.com/hiltunenjuho/nearest-pharmacy-ios")!)
-                    Link("Live web demo", destination: URL(string: "https://hiltunenjuho.github.io/nearest-pharmacy-web/")!)
+                Section {
+                    Link(text("webRepository"), destination: URL(string: "https://github.com/hiltunenjuho/nearest-pharmacy-web")!)
+                    Link(text("iosRepository"), destination: URL(string: "https://github.com/hiltunenjuho/nearest-pharmacy-ios")!)
+                    Link(text("liveDemo"), destination: URL(string: "https://hiltunenjuho.github.io/nearest-pharmacy-web/")!)
+                } header: {
+                    Text(text("projectsTitle"))
                 }
             }
-            .navigationTitle("About")
+            .navigationTitle(Text(text("aboutTitle")))
             .navigationBarTitleDisplayMode(.inline)
+            .preferredColorScheme(selectedAppearance.colorScheme)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
+                    Button {
                         isAboutPresented = false
+                    } label: {
+                        Text(text("done"))
                     }
                 }
             }
@@ -198,16 +292,47 @@ struct ContentView: View {
         .presentationDetents([.medium, .large])
     }
 
+    private enum AppearanceMode: String, CaseIterable, Identifiable {
+        case system
+        case light
+        case dark
+
+        var id: String { rawValue }
+        var titleKey: String {
+            switch self {
+            case .system: "system"
+            case .light: "light"
+            case .dark: "dark"
+            }
+        }
+        var symbol: String {
+            switch self {
+            case .system: "circle.lefthalf.filled"
+            case .light: "sun.max"
+            case .dark: "moon"
+            }
+        }
+
+        var colorScheme: ColorScheme? {
+            switch self {
+            case .system: nil
+            case .light: .light
+            case .dark: .dark
+            }
+        }
+    }
+
 }
 
 final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
-    private let placesClient = GooglePlacesClient()
+    private let placesClient = OpenStreetMapClient()
 
     @Published var location: CLLocationCoordinate2D?
     @Published var pharmacies: [Pharmacy] = []
     @Published var isLoading = false
-    @Published var errorMessage: String?
+    @Published var errorMessageKey: String?
+    @Published var errorDetails: String?
 
     override init() {
         super.init()
@@ -216,7 +341,8 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func requestLocation() {
-        errorMessage = nil
+        errorMessageKey = nil
+        errorDetails = nil
         switch manager.authorizationStatus {
         case .notDetermined:
             isLoading = true
@@ -225,9 +351,9 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
             isLoading = true
             manager.requestLocation()
         case .denied, .restricted:
-            errorMessage = "Location permission is unavailable. Enable it in Settings to find nearby pharmacies."
+            errorMessageKey = "locationPermission"
         @unknown default:
-            errorMessage = "Location permission status is unknown."
+            errorMessageKey = "locationUnknown"
         }
     }
 
@@ -239,7 +365,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
             }
         case .denied, .restricted:
             isLoading = false
-            errorMessage = "Location permission is unavailable. Enable it in Settings to find nearby pharmacies."
+            errorMessageKey = "locationPermission"
         default:
             break
         }
@@ -248,7 +374,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let latest = locations.last else {
             isLoading = false
-            errorMessage = "Your location could not be determined. Try again."
+            errorMessageKey = "locationUnavailable"
             return
         }
 
@@ -261,7 +387,8 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         Task { @MainActor in
             isLoading = false
-            errorMessage = "Could not determine your location: \(error.localizedDescription)"
+            errorMessageKey = "locationFailed"
+            errorDetails = error.localizedDescription
         }
     }
 
@@ -270,11 +397,13 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         do {
             pharmacies = try await placesClient.searchNearby(coordinate)
             if pharmacies.isEmpty {
-                errorMessage = "No pharmacies were found within 50 km of your location."
+                errorMessageKey = "noResults"
+                errorDetails = nil
             }
         } catch {
             pharmacies = []
-            errorMessage = error.localizedDescription
+            errorMessageKey = "searchFailed"
+            errorDetails = error.localizedDescription
         }
         isLoading = false
     }

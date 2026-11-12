@@ -13,7 +13,8 @@ let package = Package(
     targets: [
         .target(
             name: "TreatPharmacy",
-            path: "Sources/TreatPharmacy"
+            path: "Sources/TreatPharmacy",
+            resources: [.process("Resources")]
         )
     ]
 )
