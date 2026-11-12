@@ -108,7 +108,7 @@ struct ContentView: View {
                     .font(.subheadline)
 
                     HStack {
-                        ForEach(currentPharmacy.services, id: \ .self) { service in
+                        ForEach(currentPharmacy.services, id: \.self) { service in
                             Text(service)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
