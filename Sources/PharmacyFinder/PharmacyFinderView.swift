@@ -1,15 +1,22 @@
 import CoreLocation
 import SwiftUI
 
-struct ContentView: View {
+public struct PharmacyFinderView: View {
+    @Environment(\.colorScheme) private var systemColorScheme
     @StateObject private var locationManager = LocationManager()
     @State private var selectedPharmacyID: String?
     @State private var isAboutPresented = false
     @AppStorage("pharmacyFinder.appearance") private var appearance = AppearanceMode.system.rawValue
     @AppStorage("pharmacyFinder.language") private var languagePreference = "system"
 
+    public init() {}
+
     private var selectedAppearance: AppearanceMode {
         AppearanceMode(rawValue: appearance) ?? .system
+    }
+
+    private var effectiveColorScheme: ColorScheme {
+        selectedAppearance.colorScheme ?? systemColorScheme
     }
 
     private var selectedLanguage: String {
@@ -31,26 +38,78 @@ struct ContentView: View {
         localizedBundle.localizedString(forKey: key, value: nil, table: "Localizable")
     }
 
-    private func todayHours(_ schedule: String?) -> String {
-        guard let schedule, let hours = openingHoursForToday(schedule) else {
-            return text(schedule == nil ? "hoursUnavailable" : "checkHours")
-        }
-        switch hours {
-        case "Open 24 hours": return text("open24Hours")
-        case "Closed today": return text("closedToday")
-        default: return hours
-        }
+    private func todayHours(_ hours: String?) -> String {
+        guard let hours, !hours.isEmpty else { return text("hoursUnavailable") }
+        return hours
     }
 
     private func pharmacyName(_ name: String) -> String {
         name == "Pharmacy" ? text("unnamedPharmacy") : name
     }
 
+    private func toggleTheme() {
+        appearance = effectiveColorScheme == .dark ? AppearanceMode.light.rawValue : AppearanceMode.dark.rawValue
+    }
+
+    private var languageToggle: some View {
+        Button {
+            languagePreference = selectedLanguage == "fi" ? "en" : "fi"
+        } label: {
+            ZStack(alignment: selectedLanguage == "fi" ? .trailing : .leading) {
+                Capsule()
+                    .fill(Color.green)
+                    .frame(width: 32, height: 26)
+                    .padding(3)
+                HStack(spacing: 0) {
+                    Text("EN")
+                        .foregroundStyle(selectedLanguage == "en" ? Color.white : Color.gray)
+                        .frame(maxWidth: .infinity)
+                    Text("FI")
+                        .foregroundStyle(selectedLanguage == "fi" ? Color.white : Color.gray)
+                        .frame(maxWidth: .infinity)
+                }
+                .font(.caption.bold())
+                .frame(width: 68, height: 32)
+            }
+            .background(.thinMaterial, in: Capsule())
+            .animation(.easeInOut(duration: 0.22), value: selectedLanguage)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(text("switchLanguage"))
+        .accessibilityValue(selectedLanguage == "fi" ? "FI" : "EN")
+    }
+
+    private var themeToggle: some View {
+        Button(action: toggleTheme) {
+            ZStack(alignment: effectiveColorScheme == .dark ? .trailing : .leading) {
+                Capsule()
+                    .fill(Color.green)
+                    .frame(width: 32, height: 26)
+                    .padding(3)
+                HStack(spacing: 0) {
+                    Image(systemName: "sun.max.fill")
+                        .foregroundStyle(effectiveColorScheme == .light ? Color.white : Color.gray)
+                        .frame(maxWidth: .infinity)
+                    Image(systemName: "moon.fill")
+                        .foregroundStyle(effectiveColorScheme == .dark ? Color.white : Color.gray)
+                        .frame(maxWidth: .infinity)
+                }
+                .font(.caption.bold())
+                .frame(width: 68, height: 32)
+            }
+            .background(.thinMaterial, in: Capsule())
+            .animation(.easeInOut(duration: 0.22), value: effectiveColorScheme)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(text("appearance"))
+        .accessibilityValue(effectiveColorScheme == .dark ? text("dark") : text("light"))
+    }
+
     private var selectedPharmacy: Pharmacy? {
         locationManager.pharmacies.first { $0.id == selectedPharmacyID } ?? locationManager.pharmacies.first
     }
 
-    var body: some View {
+    public var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 18) {
                 HStack {
@@ -63,7 +122,9 @@ struct ContentView: View {
                             .font(.largeTitle.bold())
                     }
                     Spacer()
-                    Button(action: locationManager.requestLocation) {
+                    Button {
+                        locationManager.requestLocation(language: selectedLanguage)
+                    } label: {
                         Text(locationManager.isLoading ? text("searching") : text("findNearby"))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
@@ -111,13 +172,21 @@ struct ContentView: View {
                             Text(text("openToday"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            Text(todayHours(pharmacy.openingHours))
+                            Text(todayHours(pharmacy.todayHours))
                                 .font(.headline)
-                            if pharmacy.openingHours != nil {
+                            if !pharmacy.openingHours.isEmpty {
                                 Text(text("hoursDisclaimer"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
+                        }
+                        if !pharmacy.openingHours.isEmpty {
+                            DisclosureGroup(text("fullSchedule")) {
+                                ForEach(pharmacy.openingHours, id: \.self) { day in
+                                    Text(day)
+                                }
+                            }
+                            .font(.subheadline)
                         }
 
                         VStack(alignment: .leading, spacing: 8) {
@@ -127,11 +196,11 @@ struct ContentView: View {
                             if let directionsURL = pharmacy.directionsURL {
                                 Link(text("directions"), destination: directionsURL)
                             }
-                            Link(text("viewOnOSM"), destination: pharmacy.osmURL)
+                            Link(text("viewOnGoogle"), destination: pharmacy.mapsURL)
                         }
                         .tint(.green)
 
-                        Text(text("dataAttribution"))
+                        Link(text("dataAttribution"), destination: URL(string: "https://maps.google.com/")!)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .accessibilityLabel(text("dataAttribution"))
@@ -178,7 +247,7 @@ struct ContentView: View {
                                 Text(pharmacy.address.isEmpty ? text("addressMissing") : pharmacy.address)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                                Text(todayHours(pharmacy.openingHours))
+                                Text(todayHours(pharmacy.todayHours))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -196,25 +265,10 @@ struct ContentView: View {
         .preferredColorScheme(selectedAppearance.colorScheme)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker(selection: $appearance, label: Text(text("appearance"))) {
-                        ForEach(AppearanceMode.allCases) { mode in
-                            Text(text(mode.titleKey)).tag(mode.rawValue)
-                        }
-                    }
-                } label: {
-                    Image(systemName: selectedAppearance.symbol)
-                }
-                .accessibilityLabel(text("appearance"))
+                themeToggle
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    languagePreference = selectedLanguage == "fi" ? "en" : "fi"
-                } label: {
-                    Text(selectedLanguage == "fi" ? "EN" : "FI")
-                        .font(.caption.bold())
-                }
-                .accessibilityLabel(text("switchLanguage"))
+                languageToggle
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -235,11 +289,18 @@ struct ContentView: View {
             List {
                 Section {
                     Text(text("infoIntro"))
+                    Text(text("infoPortfolio"))
                     Text(String(format: text("copyright"), Calendar.current.component(.year, from: Date())))
                     Link(text("mitLicense"), destination: URL(string: "https://github.com/hiltunenjuho/nearest-pharmacy-ios/blob/main/LICENSE")!)
-                    Link(text("dataAttribution"), destination: URL(string: "https://www.openstreetmap.org/copyright")!)
+                    Link(text("dataAttribution"), destination: URL(string: "https://maps.google.com/")!)
                 } header: {
                     Text(text("aboutTitle"))
+                }
+
+                Section {
+                    NavigationLink(text("infoForNerds")) {
+                        technicalInfo
+                    }
                 }
 
                 Section {
@@ -292,26 +353,23 @@ struct ContentView: View {
         .presentationDetents([.medium, .large])
     }
 
-    private enum AppearanceMode: String, CaseIterable, Identifiable {
+    private var technicalInfo: some View {
+        List {
+            Section {
+                Text(text("infoTechnical"))
+            } header: {
+                Text(text("infoTechnicalTitle"))
+            }
+        }
+        .navigationTitle(Text(text("infoForNerds")))
+        .navigationBarTitleDisplayMode(.inline)
+        .preferredColorScheme(selectedAppearance.colorScheme)
+    }
+
+    private enum AppearanceMode: String {
         case system
         case light
         case dark
-
-        var id: String { rawValue }
-        var titleKey: String {
-            switch self {
-            case .system: "system"
-            case .light: "light"
-            case .dark: "dark"
-            }
-        }
-        var symbol: String {
-            switch self {
-            case .system: "circle.lefthalf.filled"
-            case .light: "sun.max"
-            case .dark: "moon"
-            }
-        }
 
         var colorScheme: ColorScheme? {
             switch self {
@@ -324,91 +382,6 @@ struct ContentView: View {
 
 }
 
-final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    private let manager = CLLocationManager()
-    private let placesClient = OpenStreetMapClient()
-
-    @Published var location: CLLocationCoordinate2D?
-    @Published var pharmacies: [Pharmacy] = []
-    @Published var isLoading = false
-    @Published var errorMessageKey: String?
-    @Published var errorDetails: String?
-
-    override init() {
-        super.init()
-        manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyBest
-    }
-
-    func requestLocation() {
-        errorMessageKey = nil
-        errorDetails = nil
-        switch manager.authorizationStatus {
-        case .notDetermined:
-            isLoading = true
-            manager.requestWhenInUseAuthorization()
-        case .authorizedWhenInUse, .authorizedAlways:
-            isLoading = true
-            manager.requestLocation()
-        case .denied, .restricted:
-            errorMessageKey = "locationPermission"
-        @unknown default:
-            errorMessageKey = "locationUnknown"
-        }
-    }
-
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        switch manager.authorizationStatus {
-        case .authorizedWhenInUse, .authorizedAlways:
-            if isLoading {
-                manager.requestLocation()
-            }
-        case .denied, .restricted:
-            isLoading = false
-            errorMessageKey = "locationPermission"
-        default:
-            break
-        }
-    }
-
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let latest = locations.last else {
-            isLoading = false
-            errorMessageKey = "locationUnavailable"
-            return
-        }
-
-        Task { @MainActor in
-            location = latest.coordinate
-            await loadPharmacies(near: latest.coordinate)
-        }
-    }
-
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        Task { @MainActor in
-            isLoading = false
-            errorMessageKey = "locationFailed"
-            errorDetails = error.localizedDescription
-        }
-    }
-
-    @MainActor
-    private func loadPharmacies(near coordinate: CLLocationCoordinate2D) async {
-        do {
-            pharmacies = try await placesClient.searchNearby(coordinate)
-            if pharmacies.isEmpty {
-                errorMessageKey = "noResults"
-                errorDetails = nil
-            }
-        } catch {
-            pharmacies = []
-            errorMessageKey = "searchFailed"
-            errorDetails = error.localizedDescription
-        }
-        isLoading = false
-    }
-}
-
 #Preview {
-    ContentView()
+    PharmacyFinderView()
 }

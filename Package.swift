@@ -2,18 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "TreatPharmacy",
+    name: "PharmacyFinder",
     platforms: [.iOS(.v17)],
     products: [
         .library(
-            name: "TreatPharmacy",
-            targets: ["TreatPharmacy"]
+            name: "PharmacyFinder",
+            targets: ["PharmacyFinder"]
         )
     ],
     targets: [
         .target(
-            name: "TreatPharmacy",
-            path: "Sources/TreatPharmacy",
+            name: "PharmacyFinder",
+            path: "Sources/PharmacyFinder",
             resources: [.process("Resources")]
         )
     ]
