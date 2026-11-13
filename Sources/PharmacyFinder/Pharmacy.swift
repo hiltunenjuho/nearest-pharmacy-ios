@@ -12,6 +12,7 @@ struct Pharmacy: Identifiable, Equatable, Decodable {
     let phoneNumber: String?
     let openNow: Bool?
     let nextOpenTime: String?
+    let nextCloseTime: String?
 
     var latitude: Double { lat }
     var longitude: Double { lng }

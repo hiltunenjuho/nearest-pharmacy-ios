@@ -47,8 +47,31 @@ public struct PharmacyFinderView: View {
     }
 
     private func todayHours(_ hours: String?) -> String {
-        guard let hours, !hours.isEmpty else { return text("hoursUnavailable") }
-        return hours
+        guard let hours else { return text("hoursUnavailable") }
+        let trimmedHours = hours.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedHours.isEmpty ? text("hoursUnavailable") : trimmedHours
+    }
+
+    private var appGreen: Color {
+        effectiveColorScheme == .dark
+            ? Color(red: 0.35, green: 0.83, blue: 0.54)
+            : Color(red: 0.13, green: 0.52, blue: 0.32)
+    }
+
+    private var appGreenStrong: Color {
+        effectiveColorScheme == .dark
+            ? Color(red: 0.20, green: 0.78, blue: 0.47)
+            : Color(red: 0.09, green: 0.43, blue: 0.25)
+    }
+
+    private var pageBackground: Color {
+        effectiveColorScheme == .dark
+            ? Color(red: 0.12, green: 0.12, blue: 0.12)
+            : Color(red: 0.95, green: 0.97, blue: 0.95)
+    }
+
+    private var panelBackground: Color {
+        effectiveColorScheme == .dark ? Color(red: 0.16, green: 0.16, blue: 0.16) : .white
     }
 
     private func openingCountdown(for pharmacy: Pharmacy, at now: Date) -> String? {
@@ -130,7 +153,7 @@ public struct PharmacyFinderView: View {
         } label: {
             ZStack(alignment: selectedLanguage == "fi" ? .trailing : .leading) {
                 Capsule()
-                    .fill(Color.green)
+                    .fill(appGreen)
                     .frame(width: 32, height: 26)
                     .padding(3)
                 HStack(spacing: 0) {
@@ -156,7 +179,7 @@ public struct PharmacyFinderView: View {
         Button(action: toggleTheme) {
             ZStack(alignment: effectiveColorScheme == .dark ? .trailing : .leading) {
                 Capsule()
-                    .fill(Color.green)
+                    .fill(appGreen)
                     .frame(width: 32, height: 26)
                     .padding(3)
                 HStack(spacing: 0) {
@@ -180,78 +203,68 @@ public struct PharmacyFinderView: View {
 
     public var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("Juho Hiltunen")
-                            .font(.caption)
-                            .foregroundStyle(.green)
-                            .textCase(.uppercase)
-                        Text("Pharmacy Finder")
-                            .font(.largeTitle.bold())
-                    }
-                    Spacer()
-                    Button {
-                        locationManager.requestLocation(language: selectedLanguage)
-                    } label: {
-                        Text(locationManager.isLoading ? text("searching") : text("findNearby"))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.green)
-                            .foregroundStyle(.black)
-                            .clipShape(Capsule())
-                    }
-                    .disabled(locationManager.isLoading)
-                }
+            ZStack {
+                LinearGradient(
+                    colors: [appGreen.opacity(0.12), pageBackground, pageBackground],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
 
-                if let errorKey = locationManager.errorMessageKey {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(text(errorKey))
-                        if let details = locationManager.errorDetails {
-                            Text(details)
-                                .font(.caption)
-                        }
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.green.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        header
 
-                if locationManager.pharmacies.isEmpty {
-                    VStack(spacing: 10) {
-                        Image(systemName: "cross.case")
-                            .font(.largeTitle)
-                        Text(text("noPharmacyResults"))
-                            .font(.headline)
-                        Text(text("findLocation"))
+                        Text(text("subtitle"))
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    Picker(text("filterPharmacies"), selection: $selectedFilter) {
-                        Text(text("filterAll")).tag(PharmacyFilter.all)
-                        Text(text("filterOpenNow")).tag(PharmacyFilter.openNow)
-                        Text(text("filterOpensEarliest")).tag(PharmacyFilter.opensEarliest)
-                    }
-                    .pickerStyle(.segmented)
 
-                    if visiblePharmacies.isEmpty {
-                        Text(filterEmptyMessage)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        List(visiblePharmacies) { pharmacy in
-                            pharmacyRow(pharmacy)
+                        Button {
+                            locationManager.requestLocation(language: selectedLanguage)
+                        } label: {
+                            HStack(spacing: 10) {
+                                if locationManager.isLoading {
+                                    ProgressView()
+                                        .tint(effectiveColorScheme == .dark ? Color.black : Color.white)
+                                }
+                                Text(locationManager.isLoading ? text("searching") : text("findNearby"))
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 50)
+                            .foregroundStyle(effectiveColorScheme == .dark ? Color.black : Color.white)
+                            .background(
+                                LinearGradient(colors: [appGreen, appGreenStrong], startPoint: .leading, endPoint: .trailing),
+                                in: Capsule()
+                            )
                         }
-                        .scrollContentBackground(.hidden)
-                        .background(Color.clear)
+                        .buttonStyle(.plain)
+                        .disabled(locationManager.isLoading)
+
+                        if let errorKey = locationManager.errorMessageKey {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(text(errorKey))
+                                if let details = locationManager.errorDetails {
+                                    Text(details)
+                                        .font(.caption)
+                                }
+                            }
+                            .font(.subheadline)
+                            .padding(14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(appGreen.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                        }
+
+                        resultsPanel
+                        footer
                     }
+                    .frame(maxWidth: 720, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 14)
+                    .padding(.bottom, 24)
+                    .frame(maxWidth: .infinity)
                 }
             }
-            .padding()
-            .navigationTitle(Text(text("pharmacies")))
+            .toolbar(.hidden, for: .navigationBar)
         }
         .onChange(of: locationManager.pharmacies.map(\.id)) { _, pharmacyIDs in
             selectedFilter = .all
@@ -261,25 +274,157 @@ public struct PharmacyFinderView: View {
             selectedPharmacyID = visiblePharmacies.first?.id
         }
         .preferredColorScheme(selectedAppearance.colorScheme)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                themeToggle
+        .sheet(isPresented: $isAboutPresented) {
+            aboutSheet
+        }
+    }
+
+    private var header: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "cross.case.fill")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(effectiveColorScheme == .dark ? Color.black : Color.white)
+                    .frame(width: 58, height: 58)
+                    .background(
+                        LinearGradient(colors: [appGreen, appGreenStrong], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        in: RoundedRectangle(cornerRadius: 17)
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Juho Hiltunen")
+                        .font(.caption.weight(.bold))
+                        .tracking(1.4)
+                        .foregroundStyle(appGreen)
+                        .textCase(.uppercase)
+                    Text("Pharmacy Finder")
+                        .font(.title2.bold())
+                        .tracking(-0.7)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+
+                Spacer(minLength: 4)
+                quickLinksMenu
             }
-            ToolbarItem(placement: .topBarTrailing) {
+
+            HStack(spacing: 10) {
+                Spacer()
                 languageToggle
-            }
-            ToolbarItem(placement: .topBarTrailing) {
+                themeToggle
                 Button {
                     isAboutPresented = true
                 } label: {
                     Image(systemName: "info")
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .background(panelBackground, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(appGreen.opacity(0.24), lineWidth: 1)
+                        }
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel(text("openInfo"))
             }
         }
-        .sheet(isPresented: $isAboutPresented) {
-            aboutSheet
+    }
+
+    private var quickLinksMenu: some View {
+        Menu {
+            Button(text("infoMenuItem")) {
+                isAboutPresented = true
+            }
+            Divider()
+            Link("Juho Hiltunen", destination: URL(string: "https://hiltunenjuho.github.io/")!)
+            Link("LinkedIn", destination: URL(string: "https://www.linkedin.com/in/hiltunenjuho/")!)
+            Link("GitHub", destination: URL(string: "https://github.com/hiltunenjuho")!)
+        } label: {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 18, weight: .semibold))
+                .frame(width: 44, height: 44)
+                .background(panelBackground, in: RoundedRectangle(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(appGreen.opacity(0.24), lineWidth: 1)
+                }
         }
+        .accessibilityLabel(text("menuControl"))
+    }
+
+    private var resultsPanel: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(text("nearest"))
+                    .font(.headline)
+                Spacer()
+                Text(String(format: text("resultCount"), visiblePharmacies.count))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if !locationManager.pharmacies.isEmpty {
+                Picker(text("filterPharmacies"), selection: $selectedFilter) {
+                    Text(text("filterAll")).tag(PharmacyFilter.all)
+                    Text(text("filterOpenNow")).tag(PharmacyFilter.openNow)
+                    Text(text("filterOpensEarliest")).tag(PharmacyFilter.opensEarliest)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityLabel(text("filterPharmacies"))
+            }
+
+            if visiblePharmacies.isEmpty {
+                Text(locationManager.pharmacies.isEmpty ? text("findLocation") : filterEmptyMessage)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+            } else {
+                LazyVStack(spacing: 12) {
+                    ForEach(visiblePharmacies) { pharmacy in
+                        pharmacyRow(pharmacy)
+                    }
+                }
+            }
+        }
+        .padding(18)
+        .background(panelBackground.opacity(0.96), in: RoundedRectangle(cornerRadius: 22))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22)
+                .stroke(appGreen.opacity(0.22), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
+    }
+
+    private var footer: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Pharmacy Finder")
+                    .font(.headline)
+                Text(String(format: text("footerBuilt"), Calendar.current.component(.year, from: Date())))
+                Text(text("footerPrivacy"))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 135), alignment: .leading)], alignment: .leading, spacing: 10) {
+                Link("Portfolio", destination: URL(string: "https://hiltunenjuho.github.io/")!)
+                Link("GitHub", destination: URL(string: "https://github.com/hiltunenjuho")!)
+                Link("LinkedIn", destination: URL(string: "https://www.linkedin.com/in/hiltunenjuho/")!)
+                Link(text("webRepository"), destination: URL(string: "https://github.com/hiltunenjuho/nearest-pharmacy-web")!)
+                Link(text("iosRepository"), destination: URL(string: "https://github.com/hiltunenjuho/nearest-pharmacy-ios")!)
+                Link(text("mitLicense"), destination: URL(string: "https://github.com/hiltunenjuho/nearest-pharmacy-web/blob/main/LICENSE")!)
+            }
+            .font(.caption.weight(.semibold))
+            .tint(effectiveColorScheme == .dark ? Color.black.opacity(0.8) : Color.white)
+        }
+        .font(.caption)
+        .foregroundStyle(effectiveColorScheme == .dark ? Color.black.opacity(0.85) : Color.white)
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(colors: [appGreenStrong, appGreen], startPoint: .leading, endPoint: .trailing),
+            in: RoundedRectangle(cornerRadius: 18)
+        )
     }
 
     private func pharmacyRow(_ pharmacy: Pharmacy) -> some View {
@@ -304,7 +449,7 @@ public struct PharmacyFinderView: View {
                             Text(distance < 1
                                 ? "\(Int(distance * 1000)) \(text("metersAway"))"
                                 : "\(String(format: "%.1f", locale: Locale(identifier: selectedLanguage), distance)) \(text("kilometersAway"))")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(appGreen)
                                 .fontWeight(.semibold)
                         }
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
@@ -318,7 +463,7 @@ public struct PharmacyFinderView: View {
                         if let countdown = openingCountdown(for: pharmacy, at: context.date) {
                             Text(countdown)
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(.green)
+                                .foregroundStyle(appGreen)
                         }
                     }
                     Text(todayHours(pharmacy.todayHours))
@@ -340,21 +485,41 @@ public struct PharmacyFinderView: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            isExpanded ? Color.green.opacity(0.08) : Color.clear,
+            isExpanded ? appGreen.opacity(0.08) : panelBackground,
             in: RoundedRectangle(cornerRadius: 16)
         )
-        .padding(.vertical, 4)
-        .listRowBackground(Color.clear)
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(appGreen.opacity(isExpanded ? 0.55 : 0.12), lineWidth: 1)
+        }
     }
 
     private func pharmacyDetails(for pharmacy: Pharmacy) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(text("openToday"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(todayHours(pharmacy.todayHours))
-                    .font(.headline)
+            HStack(alignment: .top, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(text("openToday"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(todayHours(pharmacy.todayHours))
+                        .font(.subheadline.weight(.semibold))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(text("phone"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let phoneNumber = pharmacy.phoneNumber, let callURL = pharmacy.callURL {
+                        Link(phoneNumber, destination: callURL)
+                            .font(.subheadline.weight(.semibold))
+                            .tint(appGreen)
+                    } else {
+                        Text(text("notProvided"))
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if !pharmacy.openingHours.isEmpty {
@@ -370,6 +535,10 @@ public struct PharmacyFinderView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
+            Link(text("dataAttribution"), destination: URL(string: "https://maps.google.com/")!)
+                .font(.footnote)
+                .tint(.primary)
+
             VStack(spacing: 8) {
                 if let directionsURL = pharmacy.directionsURL {
                     Link(destination: directionsURL) {
@@ -377,8 +546,8 @@ public struct PharmacyFinderView: View {
                             .font(.subheadline.weight(.semibold))
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .padding(.horizontal, 12)
-                            .foregroundStyle(.white)
-                            .background(Color.green, in: RoundedRectangle(cornerRadius: 12))
+                            .foregroundStyle(effectiveColorScheme == .dark ? Color.black : Color.white)
+                            .background(appGreen, in: RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
                 }
@@ -386,27 +555,22 @@ public struct PharmacyFinderView: View {
                 if let callURL = pharmacy.callURL {
                     Link(destination: callURL) {
                         Label(
-                            String(format: text("callPhone"), pharmacy.phoneNumber ?? ""),
+                            text("callPharmacy"),
                             systemImage: "phone.fill"
                         )
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .padding(.horizontal, 12)
-                        .foregroundStyle(.green)
-                        .background(Color.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                        .foregroundStyle(appGreen)
+                        .background(appGreen.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
                 }
             }
-
-            Link(text("dataAttribution"), destination: URL(string: "https://maps.google.com/")!)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel(text("dataAttribution"))
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(pageBackground, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var aboutSheet: some View {

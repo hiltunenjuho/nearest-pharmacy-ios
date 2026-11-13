@@ -1,8 +1,13 @@
 "findNearby" = "Etsi lähellä olevat apteekit";
 "searching" = "Etsitään lähellä olevia apteekkeja…";
+"subtitle" = "Löydä enintään 10 lähintä apteekkia 50 km säteellä sijainnistasi.";
+"nearest" = "Lähimmät apteekit";
+"resultCount" = "%d / enintään 10";
 "addressMissing" = "Osoitetta ei ole saatavilla";
 "unnamedPharmacy" = "Apteekki";
 "openToday" = "AVOINNA TÄNÄÄN";
+"phone" = "Puhelin";
+"notProvided" = "Ei ilmoitettu";
 "openFor" = "Avoinna vielä %@";
 "opensIn" = "Avautuu %@ päästä";
 "metersAway" = "m päässä";
@@ -11,6 +16,7 @@
 "fullSchedule" = "Koko aukioloaikataulu";
 "hoursDisclaimer" = "Google Mapsin aukioloajat voivat olla puutteellisia tai vanhentuneita. Varmista ne ennen matkaa.";
 "directions" = "Reittiohjeet";
+"callPharmacy" = "Soita apteekkiin";
 "callPhone" = "Soita: %@";
 "expanded" = "Avattu";
 "collapsed" = "Suljettu";
@@ -24,6 +30,8 @@
 "dark" = "Tumma";
 "switchLanguage" = "Vaihda kieltä";
 "openInfo" = "Tietoa sovelluksesta";
+"infoMenuItem" = "Tietoa sovelluksesta";
+"menuControl" = "Avaa pikalinkit";
 "aboutTitle" = "Tietoa Pharmacy Finderistä";
 "infoIntro" = "Pharmacy Finder auttaa löytämään lähellä olevia apteekkeja missä päin maailmaa tahansa.";
 "infoPortfolio" = "Tämä on itsenäinen ohjelmistokehittäjän portfolio-projekti, eikä se ole sidoksissa mihinkään organisaatioon.";
@@ -31,6 +39,10 @@
 "infoTechnicalTitle" = "Tekninen toteutus";
 "infoTechnical" = "Projektissa on kaksi sovellusta. Web-sovellus käyttää Reactia, TypeScriptiä, Viteä ja CSS:ää. iOS-sovellus käyttää SwiftUI:ta, Core Locationia ja URLSessionia. Molemmat kutsuvat Google Places API (New) -rajapintaa Cloudflare Worker -palvelun kautta. Google Maps Demo Key on Cloudflare Secretissä; Worker validoi pyynnöt ja rajoittaa hakunopeutta.";
 "copyright" = "© %d Juho Hiltunen";
+"footerBuilt" = "Juho Hiltunen · © %d";
+"footerPrivacy" = "Koordinaatit välitetään Cloudflaren kautta Google Mapsiin hakua varten. Sovellus ei tallenna niitä.";
+"webRepository" = "Web-sovelluksen lähdekoodi";
+"iosRepository" = "iOS-sovelluksen lähdekoodi";
 "mitLicense" = "MIT-lisenssi";
 "howItWorksTitle" = "Näin se toimii";
 "howItWorks" = "Luvallasi sovellus lähettää nykyisen sijaintisi Cloudflare Worker -palvelun kautta Google Places Nearby Searchiin. Haku kattaa enintään 50 km säteen ja näyttää enintään 10 lähintä apteekkia.";
@@ -41,8 +53,6 @@
 "authorTitle" = "Juho Hiltunen";
 "contact" = "Yhteystiedot";
 "projectsTitle" = "Projektit";
-"webRepository" = "Web-repositorio";
-"iosRepository" = "iOS-repositorio";
 "liveDemo" = "Web-demo";
 "done" = "Valmis";
 "locationPermission" = "Sijainnin käyttöoikeus ei ole käytettävissä. Ota se käyttöön asetuksissa löytääksesi lähellä olevat apteekit.";

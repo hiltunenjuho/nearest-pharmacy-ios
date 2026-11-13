@@ -12,6 +12,7 @@ SwiftUI source for the iOS version of the Pharmacy Finder portfolio project. Thi
 - Provides a call action when a phone number is available
 - Includes Finnish and English language toggles and light/dark appearance controls
 - Defaults to the device language and system appearance
+- Mirrors the web app's branded search, result count, quick links, privacy footer, and project links
 - Includes an About screen and a separate "Info for nerds" technical overview
 
 ## Code layout

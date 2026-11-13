@@ -1,8 +1,13 @@
 "findNearby" = "Find nearby pharmacies";
 "searching" = "Finding nearby pharmacies…";
+"subtitle" = "Find up to 10 of the closest pharmacies within 50 km of your location.";
+"nearest" = "Nearest pharmacies";
+"resultCount" = "%d of up to 10";
 "addressMissing" = "Address not provided";
 "unnamedPharmacy" = "Pharmacy";
 "openToday" = "OPEN TODAY";
+"phone" = "Phone";
+"notProvided" = "Not provided";
 "openFor" = "Open for %@";
 "opensIn" = "Opens in %@";
 "metersAway" = "m away";
@@ -11,6 +16,7 @@
 "fullSchedule" = "Full opening-hours schedule";
 "hoursDisclaimer" = "Google Maps hours may be incomplete or out of date. Confirm before travelling.";
 "directions" = "Get directions";
+"callPharmacy" = "Call pharmacy";
 "callPhone" = "Call %@";
 "expanded" = "Expanded";
 "collapsed" = "Collapsed";
@@ -24,6 +30,8 @@
 "dark" = "Dark";
 "switchLanguage" = "Switch language";
 "openInfo" = "About this app";
+"infoMenuItem" = "Info about the app";
+"menuControl" = "Open quick links";
 "aboutTitle" = "About Pharmacy Finder";
 "infoIntro" = "Pharmacy Finder helps you find nearby pharmacies wherever you are.";
 "infoPortfolio" = "This is an independent software developer portfolio project and is not affiliated with any organization.";
@@ -31,6 +39,10 @@
 "infoTechnicalTitle" = "How it is built";
 "infoTechnical" = "This project has two apps. The web app uses React, TypeScript, Vite, and CSS. The iOS app uses SwiftUI, Core Location, and URLSession. Both call Google Places API (New) through a Cloudflare Worker. The Google Maps Demo Key stays in a Cloudflare Secret; the Worker validates requests and rate-limits searches.";
 "copyright" = "© %d Juho Hiltunen";
+"footerBuilt" = "Juho Hiltunen · © %d";
+"footerPrivacy" = "Your coordinates are sent through Cloudflare to Google Maps for the search. The app does not save them.";
+"webRepository" = "Web app source";
+"iosRepository" = "iOS app source";
 "mitLicense" = "MIT License";
 "howItWorksTitle" = "How it works";
 "howItWorks" = "With your permission, the app sends your current location through a Cloudflare Worker to Google Places Nearby Search. It searches within 50 km and shows up to the 10 closest pharmacies.";
@@ -41,8 +53,6 @@
 "authorTitle" = "Juho Hiltunen";
 "contact" = "Contact";
 "projectsTitle" = "Projects";
-"webRepository" = "Web repository";
-"iosRepository" = "iOS repository";
 "liveDemo" = "Live web demo";
 "done" = "Done";
 "locationPermission" = "Location permission is unavailable. Enable it in Settings to find nearby pharmacies.";
