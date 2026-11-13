@@ -105,10 +105,6 @@ public struct PharmacyFinderView: View {
         .accessibilityValue(effectiveColorScheme == .dark ? text("dark") : text("light"))
     }
 
-    private var selectedPharmacy: Pharmacy? {
-        locationManager.pharmacies.first { $0.id == selectedPharmacyID } ?? locationManager.pharmacies.first
-    }
-
     public var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 18) {
@@ -149,68 +145,6 @@ public struct PharmacyFinderView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
-                if let pharmacy = selectedPharmacy {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(pharmacyName(pharmacy.name))
-                            .font(.title2.bold())
-                        Text(pharmacy.address.isEmpty ? text("addressMissing") : pharmacy.address)
-                            .foregroundStyle(.secondary)
-
-                        if let userLocation = locationManager.location {
-                            let distance = distanceInKilometers(
-                                from: (userLocation.latitude, userLocation.longitude),
-                                to: (lat: pharmacy.latitude, lon: pharmacy.longitude)
-                            )
-                            Label(distance < 1
-                                ? "\(Int(distance * 1000)) \(text("metersAway"))"
-                                : "\(String(format: "%.1f", locale: Locale(identifier: selectedLanguage), distance)) \(text("kilometersAway"))",
-                                  systemImage: "location")
-                                .font(.subheadline)
-                        }
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(text("openToday"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(todayHours(pharmacy.todayHours))
-                                .font(.headline)
-                            if !pharmacy.openingHours.isEmpty {
-                                Text(text("hoursDisclaimer"))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        if !pharmacy.openingHours.isEmpty {
-                            DisclosureGroup(text("fullSchedule")) {
-                                ForEach(pharmacy.openingHours, id: \.self) { day in
-                                    Text(day)
-                                }
-                            }
-                            .font(.subheadline)
-                        }
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            if let callURL = pharmacy.callURL {
-                                Link(String(format: text("callPhone"), pharmacy.phoneNumber ?? ""), destination: callURL)
-                            }
-                            if let directionsURL = pharmacy.directionsURL {
-                                Link(text("directions"), destination: directionsURL)
-                            }
-                            Link(text("viewOnGoogle"), destination: pharmacy.mapsURL)
-                        }
-                        .tint(.green)
-
-                        Link(text("dataAttribution"), destination: URL(string: "https://maps.google.com/")!)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .accessibilityLabel(text("dataAttribution"))
-                    }
-                    .padding(18)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.thinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                }
-
                 if locationManager.pharmacies.isEmpty {
                     VStack(spacing: 10) {
                         Image(systemName: "cross.case")
@@ -224,36 +158,7 @@ public struct PharmacyFinderView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List(locationManager.pharmacies) { pharmacy in
-                        Button {
-                            selectedPharmacyID = pharmacy.id
-                        } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack {
-                                    Text(pharmacyName(pharmacy.name))
-                                        .font(.headline)
-                                    Spacer()
-                                    if let userLocation = locationManager.location {
-                                        let distance = distanceInKilometers(
-                                            from: (userLocation.latitude, userLocation.longitude),
-                                            to: (lat: pharmacy.latitude, lon: pharmacy.longitude)
-                                        )
-                                        Text(distance < 1
-                                            ? "\(Int(distance * 1000)) \(text("metersAway"))"
-                                            : "\(String(format: "%.1f", locale: Locale(identifier: selectedLanguage), distance)) \(text("kilometersAway"))")
-                                            .foregroundStyle(.green)
-                                            .fontWeight(.semibold)
-                                    }
-                                }
-                                Text(pharmacy.address.isEmpty ? text("addressMissing") : pharmacy.address)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Text(todayHours(pharmacy.todayHours))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, 6)
-                        }
-                        .listRowBackground(Color.clear)
+                        pharmacyRow(pharmacy)
                     }
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
@@ -261,6 +166,9 @@ public struct PharmacyFinderView: View {
             }
             .padding()
             .navigationTitle(Text(text("pharmacies")))
+        }
+        .onChange(of: locationManager.pharmacies.map(\.id)) { _, pharmacyIDs in
+            selectedPharmacyID = pharmacyIDs.first
         }
         .preferredColorScheme(selectedAppearance.colorScheme)
         .toolbar {
@@ -274,7 +182,7 @@ public struct PharmacyFinderView: View {
                 Button {
                     isAboutPresented = true
                 } label: {
-                    Image(systemName: "info.circle")
+                    Image(systemName: "info")
                 }
                 .accessibilityLabel(text("openInfo"))
             }
@@ -282,6 +190,126 @@ public struct PharmacyFinderView: View {
         .sheet(isPresented: $isAboutPresented) {
             aboutSheet
         }
+    }
+
+    private func pharmacyRow(_ pharmacy: Pharmacy) -> some View {
+        let isExpanded = selectedPharmacyID == pharmacy.id
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    selectedPharmacyID = isExpanded ? nil : pharmacy.id
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(pharmacyName(pharmacy.name))
+                            .font(.headline)
+                        Spacer()
+                        if let userLocation = locationManager.location {
+                            let distance = distanceInKilometers(
+                                from: (userLocation.latitude, userLocation.longitude),
+                                to: (lat: pharmacy.latitude, lon: pharmacy.longitude)
+                            )
+                            Text(distance < 1
+                                ? "\(Int(distance * 1000)) \(text("metersAway"))"
+                                : "\(String(format: "%.1f", locale: Locale(identifier: selectedLanguage), distance)) \(text("kilometersAway"))")
+                                .foregroundStyle(.green)
+                                .fontWeight(.semibold)
+                        }
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(pharmacy.address.isEmpty ? text("addressMissing") : pharmacy.address)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text(todayHours(pharmacy.todayHours))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(pharmacyName(pharmacy.name))
+            .accessibilityValue(text(isExpanded ? "expanded" : "collapsed"))
+            .accessibilityHint(text("togglePharmacyDetails"))
+
+            if isExpanded {
+                pharmacyDetails(for: pharmacy)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            isExpanded ? Color.green.opacity(0.08) : Color.clear,
+            in: RoundedRectangle(cornerRadius: 16)
+        )
+        .padding(.vertical, 4)
+        .listRowBackground(Color.clear)
+    }
+
+    private func pharmacyDetails(for pharmacy: Pharmacy) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(text("openToday"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(todayHours(pharmacy.todayHours))
+                    .font(.headline)
+            }
+
+            if !pharmacy.openingHours.isEmpty {
+                DisclosureGroup(text("fullSchedule")) {
+                    ForEach(pharmacy.openingHours, id: \.self) { day in
+                        Text(day)
+                    }
+                }
+                .font(.subheadline)
+            }
+
+            Text(text("hoursDisclaimer"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 8) {
+                if let directionsURL = pharmacy.directionsURL {
+                    Link(destination: directionsURL) {
+                        Label(text("directions"), systemImage: "arrow.triangle.turn.up.right.diamond.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .padding(.horizontal, 12)
+                            .foregroundStyle(.white)
+                            .background(Color.green, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if let callURL = pharmacy.callURL {
+                    Link(destination: callURL) {
+                        Label(
+                            String(format: text("callPhone"), pharmacy.phoneNumber ?? ""),
+                            systemImage: "phone.fill"
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .padding(.horizontal, 12)
+                        .foregroundStyle(.green)
+                        .background(Color.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            Link(text("dataAttribution"), destination: URL(string: "https://maps.google.com/")!)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel(text("dataAttribution"))
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var aboutSheet: some View {
@@ -322,9 +350,10 @@ public struct PharmacyFinderView: View {
                 }
 
                 Section {
-                    Link(text("portfolio"), destination: URL(string: "https://hiltunenjuho.github.io/")!)
-                    Link("GitHub", destination: URL(string: "https://github.com/hiltunenjuho")!)
+                    Link("Juho Hiltunen", destination: URL(string: "https://hiltunenjuho.github.io/")!)
                     Link("LinkedIn", destination: URL(string: "https://www.linkedin.com/in/hiltunenjuho/")!)
+                    Link("GitHub", destination: URL(string: "https://github.com/hiltunenjuho")!)
+                    Link(text("contact"), destination: URL(string: "mailto:juho.m.hiltunen@gmail.com")!)
                 } header: {
                     Text(text("authorTitle"))
                 }

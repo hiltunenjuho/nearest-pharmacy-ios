@@ -6,7 +6,8 @@ SwiftUI source for the iOS version of the Pharmacy Finder portfolio project. Thi
 
 - Uses Core Location to search around the user's current position
 - Searches Google Places API (New) within a maximum 50 km radius and returns up to the 10 closest pharmacies
-- Displays pharmacy details, opening hours, and Google Maps links
+- Expands one pharmacy's details directly in the results list, with opening hours and directions
+- Provides a call action when a phone number is available
 - Includes Finnish and English language toggles and light/dark appearance controls
 - Defaults to the device language and system appearance
 - Includes an About screen and a separate "Info for nerds" technical overview

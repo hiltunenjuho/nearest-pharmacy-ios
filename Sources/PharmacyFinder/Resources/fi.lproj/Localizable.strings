@@ -9,8 +9,10 @@
 "fullSchedule" = "Koko aukioloaikataulu";
 "hoursDisclaimer" = "Google Mapsin aukioloajat voivat olla puutteellisia tai vanhentuneita. Varmista ne ennen matkaa.";
 "directions" = "Reittiohjeet";
-"viewOnGoogle" = "Näytä Google Mapsissa";
 "callPhone" = "Soita: %@";
+"expanded" = "Avattu";
+"collapsed" = "Suljettu";
+"togglePharmacyDetails" = "Näytä tai piilota apteekin lisätiedot.";
 "dataAttribution" = "Apteekkitiedot tarjoaa Google Maps";
 "noPharmacyResults" = "Apteekkeja ei löytynyt";
 "findLocation" = "Paikanna itsesi hakeaksesi lähellä olevat apteekit.";
@@ -35,7 +37,7 @@
 "privacyTitle" = "Sijainti ja palvelun saatavuus";
 "privacyInformation" = "Sovellus ei tallenna sijaintiasi tai hakutuloksia. Cloudflare välittää koordinaatit Google Mapsiin hakua varten. Maksuttomalla Google Maps Demo Keyllä on päiväkiintiö, joten haku voi keskeytyä tilapäisesti kiintiön täyttyessä.";
 "authorTitle" = "Juho Hiltunen";
-"portfolio" = "Portfolio";
+"contact" = "Yhteystiedot";
 "projectsTitle" = "Projektit";
 "webRepository" = "Web-repositorio";
 "iosRepository" = "iOS-repositorio";

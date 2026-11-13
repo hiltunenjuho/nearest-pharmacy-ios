@@ -10,22 +10,9 @@ struct Pharmacy: Identifiable, Equatable, Decodable {
     let todayHours: String?
     let openingHours: [String]
     let phoneNumber: String?
-    let mapsURL: URL
 
     var latitude: Double { lat }
     var longitude: Double { lng }
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case address
-        case lat
-        case lng
-        case todayHours
-        case openingHours
-        case phoneNumber
-        case mapsURL = "mapsUrl"
-    }
 
     var callURL: URL? {
         guard let phoneNumber else {

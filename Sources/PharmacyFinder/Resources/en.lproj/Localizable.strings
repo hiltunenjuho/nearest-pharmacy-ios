@@ -9,8 +9,10 @@
 "fullSchedule" = "Full opening-hours schedule";
 "hoursDisclaimer" = "Google Maps hours may be incomplete or out of date. Confirm before travelling.";
 "directions" = "Get directions";
-"viewOnGoogle" = "View on Google Maps";
 "callPhone" = "Call %@";
+"expanded" = "Expanded";
+"collapsed" = "Collapsed";
+"togglePharmacyDetails" = "Show or hide pharmacy details.";
 "dataAttribution" = "Pharmacy information provided by Google Maps";
 "noPharmacyResults" = "No pharmacy results";
 "findLocation" = "Find your location to load nearby pharmacies.";
@@ -35,7 +37,7 @@
 "privacyTitle" = "Location and availability";
 "privacyInformation" = "The app does not save your location or search results. Cloudflare relays the coordinates to Google Maps to perform the search. The free Maps Demo Key has daily limits, so the search may pause temporarily when its limit is reached.";
 "authorTitle" = "Juho Hiltunen";
-"portfolio" = "Portfolio";
+"contact" = "Contact";
 "projectsTitle" = "Projects";
 "webRepository" = "Web repository";
 "iosRepository" = "iOS repository";
