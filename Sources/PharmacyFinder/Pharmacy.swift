@@ -10,9 +10,32 @@ struct Pharmacy: Identifiable, Equatable, Decodable {
     let todayHours: String?
     let openingHours: [String]
     let phoneNumber: String?
+    let openNow: Bool?
+    let nextOpenTime: String?
 
     var latitude: Double { lat }
     var longitude: Double { lng }
+
+    var nextOpeningDate: Date? {
+        Self.parseProviderDate(nextOpenTime)
+    }
+
+    var nextClosingDate: Date? {
+        Self.parseProviderDate(nextCloseTime)
+    }
+
+    private static func parseProviderDate(_ value: String?) -> Date? {
+        guard let value else {
+            return nil
+        }
+        let fractionalFormatter = ISO8601DateFormatter()
+        fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractionalFormatter.date(from: value) {
+            return date
+        }
+
+        return ISO8601DateFormatter().date(from: value)
+    }
 
     var callURL: URL? {
         guard let phoneNumber else {

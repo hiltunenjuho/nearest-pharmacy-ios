@@ -1,10 +1,18 @@
 import CoreLocation
+import Foundation
 import SwiftUI
+
+private enum PharmacyFilter: String, Hashable {
+    case all
+    case openNow
+    case opensEarliest
+}
 
 public struct PharmacyFinderView: View {
     @Environment(\.colorScheme) private var systemColorScheme
     @StateObject private var locationManager = LocationManager()
     @State private var selectedPharmacyID: String?
+    @State private var selectedFilter: PharmacyFilter = .all
     @State private var isAboutPresented = false
     @AppStorage("pharmacyFinder.appearance") private var appearance = AppearanceMode.system.rawValue
     @AppStorage("pharmacyFinder.language") private var languagePreference = "system"
@@ -43,8 +51,73 @@ public struct PharmacyFinderView: View {
         return hours
     }
 
+    private func openingCountdown(for pharmacy: Pharmacy, at now: Date) -> String? {
+        guard let isOpen = pharmacy.openNow else {
+            return nil
+        }
+
+        let boundary = isOpen ? pharmacy.nextClosingDate : pharmacy.nextOpeningDate
+        guard let boundary else {
+            return nil
+        }
+
+        let minutesRemaining = Int(ceil(boundary.timeIntervalSince(now) / 60))
+        guard minutesRemaining > 0 else {
+            return nil
+        }
+
+        let hours = minutesRemaining / 60
+        let minutes = minutesRemaining % 60
+        let duration = hours > 0 ? "\(hours)h \(minutes)min" : "\(minutes)min"
+        return String(format: text(isOpen ? "openFor" : "opensIn"), duration)
+    }
+
     private func pharmacyName(_ name: String) -> String {
         name == "Pharmacy" ? text("unnamedPharmacy") : name
+    }
+
+    private var visiblePharmacies: [Pharmacy] {
+        switch selectedFilter {
+        case .all:
+            return locationManager.pharmacies
+        case .openNow:
+            return locationManager.pharmacies.filter { $0.openNow == true }
+        case .opensEarliest:
+            return locationManager.pharmacies
+                .enumerated()
+                .filter { $0.element.openNow == false }
+                .sorted { first, second in
+                    let firstOpening = first.element.nextOpeningDate ?? .distantFuture
+                    let secondOpening = second.element.nextOpeningDate ?? .distantFuture
+                    if firstOpening != secondOpening {
+                        return firstOpening < secondOpening
+                    }
+
+                    if let location = locationManager.location {
+                        let firstDistance = distanceInKilometers(
+                            from: (location.latitude, location.longitude),
+                            to: (lat: first.element.latitude, lon: first.element.longitude)
+                        )
+                        let secondDistance = distanceInKilometers(
+                            from: (location.latitude, location.longitude),
+                            to: (lat: second.element.latitude, lon: second.element.longitude)
+                        )
+                        if firstDistance != secondDistance {
+                            return firstDistance < secondDistance
+                        }
+                    }
+
+                    return first.offset < second.offset
+                }
+                .map { $0.element }
+        }
+    }
+
+    private var filterEmptyMessage: String {
+        if locationManager.pharmacies.contains(where: { $0.openNow == nil }) {
+            return text("openingStatusUnavailable")
+        }
+        return text(selectedFilter == .openNow ? "noneOpen" : "noneClosed")
     }
 
     private func toggleTheme() {
@@ -157,18 +230,35 @@ public struct PharmacyFinderView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    List(locationManager.pharmacies) { pharmacy in
-                        pharmacyRow(pharmacy)
+                    Picker(text("filterPharmacies"), selection: $selectedFilter) {
+                        Text(text("filterAll")).tag(PharmacyFilter.all)
+                        Text(text("filterOpenNow")).tag(PharmacyFilter.openNow)
+                        Text(text("filterOpensEarliest")).tag(PharmacyFilter.opensEarliest)
                     }
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
+                    .pickerStyle(.segmented)
+
+                    if visiblePharmacies.isEmpty {
+                        Text(filterEmptyMessage)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        List(visiblePharmacies) { pharmacy in
+                            pharmacyRow(pharmacy)
+                        }
+                        .scrollContentBackground(.hidden)
+                        .background(Color.clear)
+                    }
                 }
             }
             .padding()
             .navigationTitle(Text(text("pharmacies")))
         }
         .onChange(of: locationManager.pharmacies.map(\.id)) { _, pharmacyIDs in
+            selectedFilter = .all
             selectedPharmacyID = pharmacyIDs.first
+        }
+        .onChange(of: selectedFilter) { _, _ in
+            selectedPharmacyID = visiblePharmacies.first?.id
         }
         .preferredColorScheme(selectedAppearance.colorScheme)
         .toolbar {
@@ -224,6 +314,13 @@ public struct PharmacyFinderView: View {
                     Text(pharmacy.address.isEmpty ? text("addressMissing") : pharmacy.address)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    TimelineView(.periodic(from: .now, by: 60)) { context in
+                        if let countdown = openingCountdown(for: pharmacy, at: context.date) {
+                            Text(countdown)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.green)
+                        }
+                    }
                     Text(todayHours(pharmacy.todayHours))
                         .font(.caption)
                         .foregroundStyle(.secondary)

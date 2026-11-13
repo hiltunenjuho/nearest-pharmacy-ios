@@ -3,6 +3,8 @@
 "addressMissing" = "Osoitetta ei ole saatavilla";
 "unnamedPharmacy" = "Apteekki";
 "openToday" = "AVOINNA TÄNÄÄN";
+"openFor" = "Avoinna vielä %@";
+"opensIn" = "Avautuu %@ päästä";
 "metersAway" = "m päässä";
 "kilometersAway" = "km päässä";
 "hoursUnavailable" = "Aukioloaikoja ei ole saatavilla";
@@ -52,3 +54,10 @@
 "demoDailyLimit" = "Google Maps Demo Keyn päiväkohtainen kiintiö on täynnä. Yritä uudelleen huomenna.";
 "rateLimited" = "Hakuja on tehty liian nopeasti. Odota hetki ja yritä uudelleen.";
 "noResults" = "50 km säteeltä ei löytynyt apteekkeja.";
+"filterPharmacies" = "Suodata apteekkeja";
+"filterAll" = "Kaikki";
+"filterOpenNow" = "Avoinna nyt";
+"filterOpensEarliest" = "Avautuu aikaisimmin";
+"noneOpen" = "Yksikään apteekki ei ole nyt avoinna.";
+"noneClosed" = "Suljettuja apteekkeja ei löytynyt.";
+"openingStatusUnavailable" = "Apteekkien tämänhetkistä aukiolotietoa ei ole saatavilla.";

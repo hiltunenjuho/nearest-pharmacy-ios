@@ -3,6 +3,8 @@
 "addressMissing" = "Address not provided";
 "unnamedPharmacy" = "Pharmacy";
 "openToday" = "OPEN TODAY";
+"openFor" = "Open for %@";
+"opensIn" = "Opens in %@";
 "metersAway" = "m away";
 "kilometersAway" = "km away";
 "hoursUnavailable" = "Hours unavailable";
@@ -52,3 +54,10 @@
 "demoDailyLimit" = "The Google Maps Demo Key daily limit has been reached. Please try again tomorrow.";
 "rateLimited" = "Too many searches in a short time. Please wait a moment and try again.";
 "noResults" = "No pharmacies were found within 50 km.";
+"filterPharmacies" = "Filter pharmacies";
+"filterAll" = "All";
+"filterOpenNow" = "Open now";
+"filterOpensEarliest" = "Opens earliest";
+"noneOpen" = "No pharmacies are open right now.";
+"noneClosed" = "No closed pharmacies were found.";
+"openingStatusUnavailable" = "Current opening status is unavailable for these results.";
