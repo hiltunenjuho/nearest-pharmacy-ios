@@ -1,6 +1,6 @@
 # Pharmacy Finder iOS
 
-SwiftUI source for the iOS version of the Pharmacy Finder portfolio project. This repository is a Swift package, not a standalone Xcode app project. An iOS host-app target is required to install and run the public `PharmacyFinderView`.
+SwiftUI source for the iOS version of the Pharmacy Finder portfolio project. This repository is a Swift package targeting iOS 17+, not a standalone Xcode app project. An iOS host-app target is required to install and run the public `PharmacyFinderView`.
 
 ## Features
 
@@ -23,7 +23,7 @@ SwiftUI source for the iOS version of the Pharmacy Finder portfolio project. Thi
 - `Pharmacy.swift` defines the response model and distance calculation.
 - `Resources/en.lproj` and `Resources/fi.lproj` contain localized strings.
 
-The app sends coordinates through a Cloudflare Worker to Google Places and does not persist the user's location or search results. The Google Maps Demo Key remains in a Cloudflare Worker secret and is never included in the iOS app. The key is available without a billing account but has daily limits and is intended for prototypes and portfolio demos; availability is not guaranteed. Google Maps details can be incomplete or out of date, so confirm directly with a pharmacy before travelling.
+The app sends coordinates through a Cloudflare Worker to Google Places and does not persist the user's location or search results. The Google Maps Demo Key remains in a Cloudflare Worker secret and is never included in the iOS app. The key has a daily quota and is intended for prototypes and portfolio demos; availability is not guaranteed. Google Maps details can be incomplete or out of date, so confirm directly with a pharmacy before travelling.
 
 ## Configure the host iOS app
 
@@ -48,5 +48,6 @@ Application code is available under the [MIT License](./LICENSE). Google Maps co
 - [Portfolio](https://hiltunenjuho.github.io/)
 - [GitHub](https://github.com/hiltunenjuho)
 - [LinkedIn](https://www.linkedin.com/in/hiltunenjuho/)
+- [Live web demo](https://hiltunenjuho.github.io/nearest-pharmacy-web/)
 - [Web repository](https://github.com/hiltunenjuho/nearest-pharmacy-web)
 - [iOS repository](https://github.com/hiltunenjuho/nearest-pharmacy-ios)
