@@ -2,6 +2,15 @@
 
 SwiftUI source for the iOS version of the Pharmacy Finder portfolio project. This repository is a Swift package targeting iOS 17+, not a standalone Xcode app project. An iOS host-app target is required to install and run the public `PharmacyFinderView`.
 
+## Companion web demo
+
+The images below show the related web demo, not the SwiftUI package running in an iOS app.
+
+<p align="center">
+  <img src="./docs/screenshots/pharmacy-finder-dark.png" alt="Companion Pharmacy Finder web demo in dark theme" width="49%">
+  <img src="./docs/screenshots/pharmacy-finder-light.png" alt="Companion Pharmacy Finder web demo in light theme" width="49%">
+</p>
+
 ## Features
 
 - Uses Core Location to search around the user's current position
